@@ -1,0 +1,15 @@
+
+kafka_server_url: localhost
+kafka_port: 9092
+
+kafka_topic: my_topic
+
+producer:
+  delay_sec: 1
+  implementations:
+    python-kafka: PythonKafkaProducer
+    aiokafka: AioKafkaProducer
+
+
+consumer:
+  consumer_group: group_1

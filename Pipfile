@@ -5,7 +5,9 @@ name = "pypi"
 
 [packages]
 aiokafka = "*"
+click = "*"
 kafka-python = "*"
+pyyaml = "*"
 
 [dev-packages]
 
