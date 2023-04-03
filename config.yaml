@@ -20,4 +20,11 @@ producer:
 
 
 consumer:
-  consumer_group: group_1
+  group_id: group_1
+  implementations:
+    python-kafka:
+      class_name: PythonKafkaLibConsumer
+      description: "https://kafka-python.readthedocs.io/en/master/"
+    aiokafka:
+      class_name: AioKafkaLibConsumer
+      description: "https://aiokafka.readthedocs.io/en/stable/"

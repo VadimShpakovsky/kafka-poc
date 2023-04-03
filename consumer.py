@@ -1,106 +1,61 @@
-import logging
+import importlib
 
-from aiokafka import AIOKafkaConsumer
-from kafka import KafkaAdminClient, KafkaConsumer
+import click
+import yaml
 
-from utils.logging_utils import setup_logger
+from utils.common import setup_logger
 
 setup_logger()
 
-# Kafka server
-KAFKA_SERVER_URL = "localhost:9092"
-# Redpanda server
-# KAFKA_SERVER_URL = "localhost:19092"
 
-PRODUCE_DELAY_S = 1
-KAFKA_TOPIC = "my_topic"
-CONSUMER_GROUP = "group_1"
+@click.group()
+def cli():
+    pass
 
 
-async def run():
-    verify_kafka()
-    await run_consumer()
+@click.group()
+@click.option("--config", "-c", type=click.Path(exists=True), default="config.yaml")
+@click.pass_context
+def cli(ctx, config):
+    with open(config) as f:
+        ctx.obj = {"config": yaml.safe_load(f)}
 
 
-async def run_consumer():
-    logging.info("Start consumer")
-    consumer = AIOKafkaConsumer(
-        KAFKA_TOPIC, bootstrap_servers=KAFKA_SERVER_URL, group_id=CONSUMER_GROUP
-    )
+@cli.command()
+@click.option("--impl-name", required=True, help="Name of the implementation to use")
+@click.pass_context
+def consume(ctx, impl_name):
+    config = ctx.obj["config"]
 
-    await consumer.start()
+    # Parse implementation class name
     try:
-        async for message in consumer:
-            logging.info(f"Consumed: '{message}'")
-    finally:
-        await consumer.stop()
-
-    logging.info("Finish consumer")
-
-
-def verify_kafka():
-    admin_client = KafkaAdminClient(bootstrap_servers=KAFKA_SERVER_URL)
-
-    existed_topics = admin_client.list_topics()
-
-    if KAFKA_TOPIC not in existed_topics:
-        raise Exception(f"Topic {KAFKA_TOPIC} doesn't exists.")
-
-
-class AsyncConsumer:
-    consumer: AIOKafkaConsumer
-
-    def __init__(self):
-        self.consumer = AIOKafkaConsumer(
-            KAFKA_TOPIC, bootstrap_servers=KAFKA_SERVER_URL, group_id=CONSUMER_GROUP
+        impl_class_name = config["consumer"]["implementations"][impl_name]["class_name"]
+    except KeyError:
+        raise click.BadParameter(
+            param_hint="--impl-name",
+            message="supported values are provided with list_impls command",
         )
 
-    async def run(self):
-        logging.info("Start consumer")
+    # Dynamically import the implementation class
+    try:
+        module = importlib.import_module("consumers")
+        impl_class = getattr(module, impl_class_name)
+    except (ImportError, AttributeError):
+        click.echo(f"ERROR: Could not find implementation class: {impl_class_name}")
+        return
 
-        await self.consumer.start()
-        try:
-            async for message in self.consumer:
-                logging.info(f"Consumed: '{message}'")
-        finally:
-            await self.consumer.stop()
-
-        logging.info("Finish consumer")
-
-
-class SyncConsumer:
-    consumer: KafkaConsumer
-
-    def __init__(self):
-        self.consumer = KafkaConsumer(
-            KAFKA_TOPIC, bootstrap_servers=KAFKA_SERVER_URL, group_id=CONSUMER_GROUP
-        )
-
-    def run(self):
-        logging.info("Start consumer")
-
-        try:
-            for message in self.consumer:
-                logging.info(f"Consumed: '{message}'")
-        finally:
-            self.consumer.close()
-
-        logging.info("Finish consumer")
-
-
-async def run_async_consumer():
-    consumer = AsyncConsumer()
-    await consumer.run()
-
-
-def run_sync_consumer():
-    consumer = SyncConsumer()
+    # run consumer
+    consumer = impl_class(config)
     consumer.run()
 
 
-if __name__ == "__main__":
-    # run async consumer
-    # asyncio.run(run_async_consumer())
+@cli.command()
+@click.pass_context
+def list_impls(ctx):
+    impls = ctx.obj["config"]["consumer"]["implementations"]
+    for impl_name, impl_details in impls.items():
+        click.echo(f"{impl_name:<20} -- {impl_details['description']}")
 
-    # run sync consumer
-    run_sync_consumer()
+
+if __name__ == "__main__":
+    cli()

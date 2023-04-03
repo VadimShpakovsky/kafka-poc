@@ -29,7 +29,7 @@ def produce(ctx, impl_name):
 
     # Parse implementation class name
     try:
-        impl_class_name = config["producer"]["implementations"][impl_name]["class"]
+        impl_class_name = config["producer"]["implementations"][impl_name]["class_name"]
     except KeyError:
         raise click.BadParameter(
             param_hint="--impl-name",

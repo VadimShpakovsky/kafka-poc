@@ -39,12 +39,17 @@ python producer.py list-impls
 
 # run Producer using aiokafka implementation
 python producer.py produce --impl-name aiokafka
- 
 ```
 Infinitely produce data, pushing them to Kafka topic and logging the progress. 
 
 # Run Consumer
 ```shell
-python consumer.py
+# list all available Consumer implementations
+python consumer.py list-impls
+> aiokafka
+> ...
+
+# run Consumer using aiokafka implementation
+python consumer.py consume --impl-name aiokafka
 ```
 Infinitely consume data, logging consumed data. 

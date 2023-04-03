@@ -15,3 +15,12 @@ def setup_kafka(broker_uri: str, topic_name: str, topic_config: dict):
     else:
         admin_client.create_topics([NewTopic(name=topic_name, **topic_config)])
         logging.info(f"Topic {topic_name} was created.")
+
+
+def verify_kafka(broker_uri: str, topic_name: str):
+    admin_client = KafkaAdminClient(bootstrap_servers=broker_uri)
+
+    existed_topics = admin_client.list_topics()
+
+    if topic_name not in existed_topics:
+        raise Exception(f"Topic {topic_name} doesn't exists.")
