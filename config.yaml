@@ -3,12 +3,20 @@ kafka_server_url: localhost
 kafka_port: 9092
 
 kafka_topic: my_topic
+topic_config:
+  num_partitions: 2
+  replication_factor: 1
 
 producer:
-  delay_sec: 1
+  produce_delay_sec: 1
   implementations:
-    python-kafka: PythonKafkaProducer
-    aiokafka: AioKafkaProducer
+    python-kafka:
+      class_name: PythonKafkaLibProducer
+      description: "https://kafka-python.readthedocs.io/en/master/"
+    aiokafka:
+      class_name: AioKafkaLibProducer
+      description: "https://aiokafka.readthedocs.io/en/stable/"
+
 
 
 consumer:
